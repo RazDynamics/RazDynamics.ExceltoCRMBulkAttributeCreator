@@ -65,6 +65,7 @@
             this.tsbCloseThisTab.Name = "tsbCloseThisTab";
             this.tsbCloseThisTab.Size = new System.Drawing.Size(23, 22);
             this.tsbCloseThisTab.Text = "Close this tab";
+            this.tsbCloseThisTab.Click += new System.EventHandler(this.tsbCloseThisTab_Click_1);
             // 
             // tsbLoadEntities
             // 

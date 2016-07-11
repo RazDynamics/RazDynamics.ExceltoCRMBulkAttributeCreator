@@ -34,7 +34,7 @@ namespace CRMConsultants.CreateAttributes
         private void initialize()
         {
             //Attribute Type	Attribute Schema Name	Option Set Values	Attribute Display Name	Description	RequiredLevel	Boolean Default  Value	String Format	String Length	Date Type Format	Integer Format	Integer Minimum Value	Integer Maximum Value	Floating Number Precision	Float Min Value	Float Max Value	Decimal Precision	Decimal Min Value	Decimal Max Value	Currency precision	Currency Min Value	Currency Max Value	 IME Mode	AuditEnable	IsValidForAdvancedFind
-            ApplicationSetting.ColumnsListToVarify= new string[]{ "Attribute Type", "Attribute Schema Name", "Option Set Values", "Attribute Display Name", "Description", "RequiredLevel",   "Boolean Default  Value",  "String Format",   "String Length",   "Date Type Format",   "Integer Format",  "Integer Minimum Value",   "Integer Maximum Value",   "Floating Number Precision",   "Float Min Value", "Float Max Value", "Decimal Precision",   "Decimal Min Value",   "Decimal Max Value",   "Currency precision",  "Currency Min Value",  "Currency Max Value",   "IME Mode",   "AuditEnable", "IsValidForAdvancedFind" };
+            ApplicationSetting.ColumnsListToVarify= new string[]{ "Attribute Type", "Attribute Display Name", "Attribute Schema Name" , "Description", "RequiredLevel", "IME Mode", "AuditEnable", "IsValidForAdvancedFind",  "String Format",   "String Length", "Option Set Values", "Default  Value", "Date Type Format",   "Integer Format",  "Integer Minimum Value",   "Integer Maximum Value",   "Floating Number Precision",   "Float Min Value", "Float Max Value", "Decimal Precision",   "Decimal Min Value",   "Decimsl Max Value",   "Currency precision",  "Currency Min Value",  "Currency Max Value",   };
         }
 
         #endregion Constructor
@@ -123,7 +123,7 @@ namespace CRMConsultants.CreateAttributes
             }
             var dialog = new SaveFileDialog
             {
-                Filter = "Excel workbook|*.xlsx",
+                Filter = "Excel workbook|*.xlsm",
                 Title = "Select a location for the file generated"
             };
             if (dialog.ShowDialog(this) == DialogResult.OK)
@@ -131,7 +131,7 @@ namespace CRMConsultants.CreateAttributes
                 txtFilePath.Text = dialog.FileName;
                 Assembly assembly = Assembly.GetExecutingAssembly();
                 Assembly asm = Assembly.GetExecutingAssembly();
-                string file = string.Format("{0}.Attribute Sample.xlsx", asm.GetName().Name);
+                string file = string.Format("{0}.Attribute Sample.xlsm", asm.GetName().Name);
                 Stream fileStream = asm.GetManifestResourceStream(file);
                 SaveStreamToFile(dialog.FileName, fileStream); 
                 this.Invoke(new Action(() => { txtFilePath.Text = dialog.FileName; }));
@@ -149,7 +149,7 @@ namespace CRMConsultants.CreateAttributes
             int progressCounter = 0;
             var dialog = new OpenFileDialog
             {
-                Filter = "Excel workbook|*.xlsx",
+                Filter = "Excel workbook|*.xlsm",
                 Title = "Select a file to import"
             };
 
@@ -179,38 +179,46 @@ namespace CRMConsultants.CreateAttributes
                     int colCount = excell_app.workSheet_range.Columns.Count;
                     int row = 0;
 
-                    for (int i = 1; i <= rowCount; i++)
+                    try
                     {
-                        bool addRow = true;
-                        // Validate and Insert only defined values
-                        int col = 0;
-                        for (int j = 1; j <= colCount; j++)
+                        for (int i = 1; i <= rowCount; i++)
                         {
-                            if (excell_app.workSheet_range.Cells[i, j] != null && excell_app.workSheet_range.Cells[i, j].Value2 != null)
+                            bool addRow = true;
+                            // Validate and Insert only defined values
+                            int col = 0;
+                            for (int j = 1; j <= colCount; j++)
                             {
-                                string val = excell_app.workSheet_range.Cells[i, j].Value2.ToString();
-                                //Use the first row to add columns to DataTable.
-                                if (i == 1)
+                                if (excell_app.workSheet_range.Cells[i, j] != null && excell_app.workSheet_range.Cells[i, j].Value2 != null)
                                 {
-                                    // if (ApplicationSetting.ColumnsListToVarify.Contains(val))
-                                    ApplicationSetting.ExcelData.Columns.Add(val.Trim());
-                                }
-                                else
-                                {
-                                    //Add rows to DataTable.
-                                    if (addRow)
+                                    string val = excell_app.workSheet_range.Cells[i, j].Value2.ToString();
+                                    //Use the first row to add columns to DataTable.
+                                    if (i == 1)
                                     {
-                                        ApplicationSetting.ExcelData.Rows.Add();
-                                        addRow = false;
+                                        ApplicationSetting.ExcelData.Columns.Add(val.Trim());
                                     }
-                                    // if ((col + 1) <= ApplicationSetting.ExcelData.Columns.Count)
-                                    ApplicationSetting.ExcelData.Rows[i - 2][col] = val.Trim();
+                                    else
+                                    {
+                                        //Add rows to DataTable.
+                                        if (addRow)
+                                        {
+                                            ApplicationSetting.ExcelData.Rows.Add();
+                                            addRow = false;
+                                        }
+                                        ApplicationSetting.ExcelData.Rows[i - 2][col] = val.Trim();
+                                    }
                                 }
+                                col++;
                             }
-                            //if ((col + 1) <= ApplicationSetting.ExcelData.Columns.Count)
-                            col++;
+                            row++;
                         }
-                        row++;
+                    }
+                    catch (Exception Ex)
+                    {
+                        this.Invoke(new Action(() =>
+                        {
+                            MessageBox.Show(this, "Please make sure Attribute Display Name, Attribute Schema Name and Attribute Type is entered.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        }));
+                        return;
                     }
 
                     if (!IsValidNoOfColumns())
@@ -247,12 +255,16 @@ namespace CRMConsultants.CreateAttributes
                         }
                     }
                     bw.ReportProgress(100, "Attributes created successfully........");
+                   
                     this.Invoke(new Action(() =>
                     {
                         MessageBox.Show(this,"Attributes created successfully........");
                     }));
                     this.Invoke(new Action(() =>
                     {
+                        excell_app.workbook.Close();
+
+                        excell_app.app.Quit();
                         excell_app.ReleaseObject();
                         excell_app = null;
                         txtFilePath.Text = "";               
@@ -335,7 +347,7 @@ namespace CRMConsultants.CreateAttributes
                 string optionSetValues = record["Option Set Values"].ToString().ToLower();
                 string attributeDisplayName = record["Attribute Display Name"].ToString().ToLower();
                 string attributeDiscription = record["Description"].ToString().ToLower();
-                bool boolDefaultValue= record["Boolean Default  Value"].ToString().ToLower()=="yes"?true:false;
+                bool boolDefaultValue= record["Default  Value"].ToString().ToLower()=="yes"?true:false;
 
                 Microsoft.Xrm.Sdk.Metadata.StringFormat stringFormat = GetStringFormat(record["String Format"].ToString().ToLower());
                int stringLength= record["String Length"]!=null && !string.IsNullOrEmpty(Convert.ToString(record["String Length"])) && Convert.ToInt32(record["String Length"].ToString()) <=4000? Convert.ToInt32(record["String Length"].ToString()) : 4000;
@@ -352,7 +364,7 @@ namespace CRMConsultants.CreateAttributes
 
                 int decimalPrecision = record["Decimal Precision"] != null && !string.IsNullOrEmpty(Convert.ToString(record["Decimal Precision"])) ? Convert.ToInt32(record["Decimal Precision"].ToString()) : 2;
                 Decimal decimalMinValue = record["Decimal Min Value"] != null && !string.IsNullOrEmpty(Convert.ToString(record["Decimal Min Value"])) && Convert.ToDecimal(record["Decimal Min Value"].ToString())>=-100000000000 && Convert.ToDecimal(record["Decimal Min Value"].ToString()) <= 100000000000 ? Convert.ToDecimal(record["Decimal Min Value"].ToString()) : -100000000000;
-                Decimal decimalMaxValue = record["Decimal Max Value"] != null && !string.IsNullOrEmpty(Convert.ToString(record["Decimal Max Value"])) && Convert.ToDecimal(record["Decimal Max Value"].ToString()) >= -100000000000 && Convert.ToDecimal(record["Decimal Max Value"].ToString()) <= 100000000000 ? Convert.ToDecimal(record["Decimal Max Value"].ToString()) : 100000000000;
+                Decimal decimalMaxValue = record["Decimsl Max Value"] != null && !string.IsNullOrEmpty(Convert.ToString(record["Decimsl Max Value"])) && Convert.ToDecimal(record["Decimsl Max Value"].ToString()) >= -100000000000 && Convert.ToDecimal(record["Decimsl Max Value"].ToString()) <= 100000000000 ? Convert.ToDecimal(record["Decimsl Max Value"].ToString()) : 100000000000;
 
                 Double currencyMinValue = record["Currency Min Value"] != null && !string.IsNullOrEmpty(Convert.ToString(record["Currency Min Value"])) && Convert.ToDouble(record["Currency Min Value"].ToString())>=-922337203685477 && Convert.ToDouble(record["Currency Min Value"].ToString())<= 922337203685477 ? Convert.ToDouble(record["Currency Min Value"].ToString()) : -922337203685477;
                 Double currencyMaxValue = record["Currency Max Value"] != null && !string.IsNullOrEmpty(Convert.ToString(record["Currency Max Value"])) && Convert.ToDouble(record["Currency Max Value"].ToString()) >= -922337203685477 && Convert.ToDouble(record["Currency Max Value"].ToString()) <= 922337203685477 ? Convert.ToDouble(record["Currency Max Value"].ToString()) : 922337203685477;
@@ -524,18 +536,6 @@ namespace CRMConsultants.CreateAttributes
                         };
                         break;
                 }
-
-                //ExecuteMultipleRequest requestWithResults = new ExecuteMultipleRequest()
-                //{
-                //    // Assign settings that define execution behavior: continue on error, return responses. 
-                //    Settings = new ExecuteMultipleSettings()
-                //    {
-                //        ContinueOnError = false,
-                //        ReturnResponses = true
-                //    },
-                //    // Create an empty organization request collection.
-                //    Requests = new OrganizationRequestCollection()
-                //};
                 CreateAttributeRequest request = new CreateAttributeRequest
                 {
                     Attribute = createMetadata,
@@ -675,6 +675,11 @@ namespace CRMConsultants.CreateAttributes
                 }
             }
             return optionMetadataCollection;
+        }
+
+        private void tsbCloseThisTab_Click_1(object sender, EventArgs e)
+        {
+            CloseTool();
         }
         //private static void AddBooleanAttribute(string entityName, string attributeName, AttributeRequiredLevel requirementLevel, string displayValue)
         //{
