@@ -10,8 +10,8 @@ namespace CRMConsultants.CreateAttributes
     ExportMetadata("BackgroundColor", "#263764"),
     ExportMetadata("PrimaryFontColor", "White"),
     ExportMetadata("SecondaryFontColor", "LightGray"),
-    ExportMetadata("Name", "Bulk Attribute Creator"),
-    ExportMetadata("Description", "You can create Attributes through Excel file.")]
+    ExportMetadata("Name", "Excel to CRM Bulk Attribute Creator"),
+    ExportMetadata("Description", "Allows to create CRM Attributes via Excel spreadsheet.")]
     public class Plugin : PluginBase
     {
         public override IXrmToolBoxPluginControl GetControl()
