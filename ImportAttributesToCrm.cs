@@ -69,10 +69,18 @@ namespace CRMConsultants.CreateAttributes
                     {
                         var emds = (EntityMetadata[])e.Result;
 
+                        List<EntityData> entityList = new List<EntityData>();
+                      //  var orderedMedata = emds.OrderBy(em => em.DisplayName).ToArray();
                         foreach (var emd in emds)
                         {
-                            if (emd.IsCustomizable.Value==true && emd.CanCreateAttributes.Value==true)
-                                cmbEntities.Items.Add(new EntityData(emd.LogicalName, emd.DisplayName != null && emd.DisplayName.UserLocalizedLabel != null ? emd.DisplayName.UserLocalizedLabel.Label : "N/A", emd.PrimaryIdAttribute));
+                            if (emd.IsCustomizable.Value == true && emd.CanCreateAttributes.Value == true)
+                                entityList.Add(new EntityData(emd.LogicalName, emd.DisplayName != null && emd.DisplayName.UserLocalizedLabel != null ? emd.DisplayName.UserLocalizedLabel.Label : "N/A", emd.PrimaryIdAttribute));           
+                        }
+
+                        var objectList = entityList.OrderBy(i => i.DisplayName);
+                        foreach (var ent in objectList)
+                        {
+                            cmbEntities.Items.Add(new EntityData(ent.LogicalName, ent.DisplayName, ent.PrimaryIdAttribute));
                         }
                     }
                 },
